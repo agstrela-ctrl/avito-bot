@@ -122,6 +122,8 @@ def check_and_notify():
     searches = load_json(SEARCHES_FILE, {}).get("searches", [])
     seen = load_json(DATA_FILE, {})
     session = make_session()
+    # Одно объявление может попасть в несколько поисков — уведомляем о нём один раз
+    already_known = {item_id for ids in seen.values() for item_id in ids}
 
     for i, search in enumerate(searches):
         name = search["name"]
@@ -160,11 +162,12 @@ def check_and_notify():
             # Первый запуск: запоминаем текущую выдачу, чтобы не завалить старыми объявлениями
             print(f"[{name}] первый запуск, запомнил {len(new_ids)} объявлений")
         else:
-            hits = [items[k] for k in new_ids if matches(search, items[k])]
+            hits = [items[k] for k in new_ids if k not in already_known and matches(search, items[k])]
             for item in reversed(hits):  # старые сначала, свежие последними
                 send_telegram(format_item(search, item))
             print(f"[{name}] новых: {len(new_ids)}, подошло по фильтрам: {len(hits)}")
 
+        already_known.update(new_ids)
         seen[name] = (new_ids + known)[:MAX_SEEN_PER_SEARCH]
 
     save_seen(seen)
