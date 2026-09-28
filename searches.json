@@ -1,0 +1,12 @@
+{
+  "_help": "region — часть адреса Авито после avito.ru/ (moskva, sankt-peterburg, rossiya — вся страна). query — что вбить в поиск. include — хотя бы одно из слов должно быть в заголовке/описании (пусто = не проверять). exclude — объявления с этими словами пропускаются. max_price — необязательно.",
+  "searches": [
+    {
+      "name": "L'Oréal Professionnel Metal Detox",
+      "region": "rossiya",
+      "query": "metal detox",
+      "include": ["metal detox", "metal-detox", "metaldetox", "метал детокс"],
+      "exclude": []
+    }
+  ]
+}

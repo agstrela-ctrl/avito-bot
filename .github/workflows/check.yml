@@ -1,0 +1,45 @@
+name: Check Avito
+
+on:
+  # Встроенный cron GitHub ненадёжен на коротких интервалах; для частых проверок
+  # можно дёргать workflow_dispatch через cron-job.org, как во ВкусВилл-боте.
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: avito-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -r requirements.txt
+
+      - name: Run checker
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+        run: python bot.py
+
+      - name: Persist state
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          [ -f seen_items.json ] && git add -f seen_items.json
+          [ -f blocked.flag ] && git add -f blocked.flag
+          [ -f blocked.flag ] || git rm -f --ignore-unmatch blocked.flag >/dev/null 2>&1 || true
+          git diff --staged --quiet || git commit -m "chore: update seen items state"
+          git pull --rebase origin main
+          git push
