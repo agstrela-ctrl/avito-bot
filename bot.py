@@ -131,20 +131,20 @@ def check_and_notify():
             time.sleep(5)  # не долбим Авито запросами подряд
         try:
             items = fetch_items(session, search)
-        except Blocked as e:
-            print(f"[{name}] Авито заблокировал запрос: {e}")
+        except Exception as e:
+            # Блокировка Авито или ошибка прокси — дальше пробовать бессмысленно
+            print(f"[{name}] Не удалось получить объявления: {e}")
             if not os.path.exists(ALERT_FLAG_FILE):
+                reason = ("Авито блокирует запросы — нужен другой российский IP в PROXY_URL."
+                          if isinstance(e, Blocked) else
+                          f"Ошибка подключения (скорее всего, прокси PROXY_URL):\n<code>{html.escape(str(e)[:300])}</code>")
                 send_telegram(
-                    "⚠️ <b>Авито блокирует запросы бота</b>\n"
-                    "Скорее всего, проблема с прокси (PROXY_URL) — нужен российский "
-                    "домашний/мобильный IP. Бот будет пробовать дальше и напишет, когда заработает."
+                    f"⚠️ <b>Бот Авито не может получить объявления</b>\n{reason}\n"
+                    "Бот будет пробовать дальше и напишет, когда заработает."
                 )
                 with open(ALERT_FLAG_FILE, "w") as f:
                     f.write("1")
             sys.exit(0)
-        except Exception as e:
-            print(f"[{name}] Ошибка запроса: {e}")
-            continue
 
         if os.path.exists(ALERT_FLAG_FILE):
             os.remove(ALERT_FLAG_FILE)
